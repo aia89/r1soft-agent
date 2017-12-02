@@ -1,0 +1,42 @@
+---
+- hosts: test
+  connection: ssh
+  become: yes
+  become_method: sudo
+  gather_facts: no
+  roles:
+    - r1soft
+  tasks:
+    - copy:
+        src: /etc/ansible/roles/r1soft-agent/files/r1soft.repo
+        dest: /etc/yum.repos.d
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: upgrade all packages
+      yum: name=* state=latest
+
+    - name: ensure iptables is configured to allow ssh traffic (port 1167/tcp)
+      lineinfile:
+        dest=/etc/sysconfig/iptables 
+        state=present 
+        regexp="^.*INPUT.*tcp.*1167.*ACCEPT" 
+        insertafter="^.*INPUT.*ESTABLISHED,RELATED.*ACCEPT" line="-A INPUT -m state --state NEW -m tcp -p tcp --dport 1167 -j ACCEPT" 
+        backup=yes
+     
+    - name: restart iptables
+      service: name=iptables state=restarted
+    
+    - name: get module
+      command: r1soft-setup --get-module
+      ignore_errors: True
+
+    - name: restart service
+      shell: /etc/init.d/cdp-agent restart
+
+    - name: get a key
+      command: r1soft-setup --get-key http://192.168.56.104:8080
+      
+    - name: make sure  enable the backup service to start on boot
+      service: name=cdp-agent  enabled=yes

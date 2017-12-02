@@ -4,10 +4,11 @@ The R1Soft Server Backup Manager is a backup application for Linux and Windows m
 
 This yml will show you how to setup your CentOS 6 server with an R1Soft Agent so that you can start taking advantage of the security of near-continuous backups.
 
+  
 
-
- - name: Fisrts it will install dependency, othervise it gonna give an error to install it
-      yum: name=libselinux-python state=installed
+# Fisrts it will install dependency, othervise it gonna give an error to install it. roles for installing all packages you can find inside tasks file
+     roles:
+       - r1soft
 
     - copy:   #copy and paste r1soft.repo , i will put configuration file on r1soft.repo file
         src: /etc/ansible/roles/r1soft-agent/files/r1soft.repo  #change it for you own preference 
@@ -16,21 +17,19 @@ This yml will show you how to setup your CentOS 6 server with an R1Soft Agent so
         group: root
         mode: 0644
 
-    - name: Install multiple packages  
-      yum:
-        name: "{{ item }}"
-        state: installed
-      with_items:
-        - serverbackup-enterprise-agent
+    - name: ensure iptables is configured to allow ssh traffic (port 1167/tcp)
+      lineinfile:
+        dest=/etc/sysconfig/iptables
+        state=present
+        regexp="^.*INPUT.*tcp.*1167.*ACCEPT"
+        insertafter="^.*INPUT.*ESTABLISHED,RELATED.*ACCEPT" line="-A INPUT -m state --state NEW -m tcp -p tcp --dport 1167 -j ACCEPT"
+        backup=yes
+
+    - name: restart iptables
+      service: name=iptables state=restarted
 
 
-     - name:  make sure kernel is updated 
-      yum: name=kernel state=latest
 
-
-    make sure iptables are stopped or change it for your own preference. port 1167 & 8080 must be open.
-    make sure selinux disabled
-    
      - name: get module
       command: r1soft-setup --get-module
       ignore_errors: True     #in my case i have got an error but it will work anyway and i just ignore an error
