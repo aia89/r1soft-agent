@@ -1,0 +1,54 @@
+---
+- hosts: test
+  connection: ssh
+  become: yes
+  become_method: sudo
+  gather_facts: no
+  tasks:
+    - name: Install dependency
+      yum: name=libselinux-python state=installed
+
+    - copy:
+        src: /etc/ansible/roles/r1soft-agent/files/r1soft.repo
+        dest: /etc/yum.repos.d
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Install multiple packages
+      yum:
+        name: "{{ item }}"
+        state: installed
+      with_items:
+        - serverbackup-enterprise-agent
+        - telnet
+        - vim
+        - kernel-devel
+        - kernel-headers
+        - perl
+        - gcc
+        - bzip2
+        
+
+    - name: Update kernel
+      yum: name=kernel state=latest
+
+
+    - name: stop iptables
+      service: name=iptables state=stopped
+    - name: disable iptables on a boot
+      service: name=iptables enabled=no 
+
+    - name: disabled selinux
+      selinux: state=disabled
+     
+    
+    - name: get module
+      command: r1soft-setup --get-module
+      ignore_errors: True
+
+    - name: restart service
+      shell: /etc/init.d/cdp-agent restart
+
+    - name: get a key
+      command: r1soft-setup --get-key http://192.168.56.104:8080
