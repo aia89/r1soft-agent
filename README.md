@@ -6,17 +6,17 @@ This yml will show you how to setup your CentOS 6 server with an R1Soft Agent so
 
   
 
-# Fisrts it will install dependency, othervise it gonna give an error to install it. roles for installing all packages you can find inside tasks file
+ Fisrts it will install dependency, othervise it gonna give an error to install it. roles for installing all packages you can find inside tasks file
      roles:
        - r1soft
-
+#r1soft repository
     - copy:   #copy and paste r1soft.repo , i will put configuration file on r1soft.repo file
         src: /etc/ansible/roles/r1soft-agent/files/r1soft.repo  #change it for you own preference 
         dest: /etc/yum.repos.d
         owner: root
         group: root
         mode: 0644
-
+#firewall
     - name: ensure iptables is configured to allow ssh traffic (port 1167/tcp)
       lineinfile:
         dest=/etc/sysconfig/iptables
